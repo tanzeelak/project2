@@ -82,12 +82,11 @@ private[sql] class DiskPartition (
     System.out.println("DEBUGGING: insert")
     /* IMPLEMENT THIS METHOD */
     if (row.size + measurePartitionSize() > blockSize){
+	  System.out.println("DEBUGGING: sspillin to disk + clear data")
       spillPartitionToDisk()
+	  data.clear()
     }
-    else {
-      System.out.println("DEBUGGING: insert else")
-      data.add(row)
-    }
+	data.add(row)
   }
 
   /**
