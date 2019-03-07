@@ -79,7 +79,15 @@ private[sql] class DiskPartition (
     * @param row the [[Row]] we are adding
     */
   def insert(row: Row) = {
+    System.out.println("DEBUGGING: insert")
     /* IMPLEMENT THIS METHOD */
+    if (row.size + measurePartitionSize() > blockSize){
+      spillPartitionToDisk()
+    }
+    else {
+      System.out.println("DEBUGGING: insert else")
+      data.add(row)
+    }
   }
 
   /**
@@ -122,13 +130,31 @@ private[sql] class DiskPartition (
       var byteArray: Array[Byte] = null
 
       override def next() = {
+        System.out.println("DEBUGGING: next1")
         /* IMPLEMENT THIS METHOD */
-        null
+        var ret: Row = null
+        if (currentIterator.hasNext){
+          System.out.println("DEBUGGING: next1 ret not null")
+          ret = currentIterator.next()
+        }
+        else{
+          System.out.println("DEBUGGING: next1 false")
+          if(fetchNextChunk()){
+            next()
+          }
+        }
+        System.out.println("DEBUGGING: next2 returnig")
+        ret
       }
 
       override def hasNext() = {
+        System.out.println("DEBUGGING: hasNext1")
         /* IMPLEMENT THIS METHOD */
-        false
+        var result : Boolean = false
+        if (currentIterator.hasNext || chunkSizeIterator.hasNext){
+          result = true
+        }
+        result
       }
 
       /**
@@ -139,7 +165,22 @@ private[sql] class DiskPartition (
         */
       private[this] def fetchNextChunk(): Boolean = {
         /* IMPLEMENT THIS METHOD */
-        false
+        var result : Boolean = false
+        System.out.println("DEBUGGING: fetchNextChunk1")
+
+        if (chunkSizeIterator.hasNext){
+          System.out.println("DEBUGGING: fetchNextChunk2 hasNext returned true")
+          val chunkSize : Int = chunkSizeIterator.next()
+          System.out.println("DEBUGGING: fetchNextChunk2.1 chunksize: ")
+          System.out.println(chunkSize)
+          byteArray = getNextChunkBytes(inStream, chunkSize, byteArray)
+          System.out.println("DEBUGGING: fetchNextChunk3 after chunk bytes")
+          currentIterator = getListFromBytes(byteArray).iterator().asScala
+          System.out.println("DEBUGGING: fetchNextChunk4 after get list bytes")
+          result = true
+        }
+        System.out.println("DEBUGGING: fetchNextChunk2.5 hasNext returned false")
+        result
       }
     }
   }
@@ -152,8 +193,12 @@ private[sql] class DiskPartition (
     * also be closed.
     */
   def closeInput() = {
+    System.out.println("closeInput")
     /* IMPLEMENT THIS METHOD */
+    spillPartitionToDisk()
     inputClosed = true
+    outStream.close()
+    closePartition()
   }
 
 
