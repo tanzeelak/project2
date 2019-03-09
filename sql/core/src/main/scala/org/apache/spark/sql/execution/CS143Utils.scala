@@ -95,6 +95,8 @@ object CS143Utils {
       byteArray = new Array[Byte](nextChunkSize)
     }
 
+
+    System.out.println("before reading in bytes")
     // Read the bytes in.
     inStream.read(byteArray)
 
