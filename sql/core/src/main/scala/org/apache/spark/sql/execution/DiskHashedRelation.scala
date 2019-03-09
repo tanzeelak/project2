@@ -65,9 +65,9 @@ protected [sql] final class GeneralDiskHashedRelation(partitions: Array[DiskPart
     val size : Int = partitions.length
     for (i <- 0 until size){
       partitions(i).closeInput()
-      System.out.println("Closed the input of partition: ")
-      System.out.println(i)
     }
+    System.out.println("THIS FUCKTION TOO closed partitions")
+
   }
 }
 
@@ -112,6 +112,7 @@ private[sql] class DiskPartition (
     * @return the estimated size of the data
     */
   private[this] def measurePartitionSize(): Int = {
+
     CS143Utils.getBytesFromList(data).size
   }
 
@@ -164,6 +165,13 @@ private[sql] class DiskPartition (
         /* IMPLEMENT THIS METHOD */
         var result : Boolean = false
         if (currentIterator.hasNext || chunkSizeIterator.hasNext){
+          System.out.println("Current, chunk iters have next: ")
+          System.out.println(currentIterator.hasNext)
+          System.out.println(chunkSizeIterator.hasNext)
+          if (chunkSizeIterator.hasNext){
+            System.out.println(chunkSizeIterator)
+
+          }
           result = true
         }
         result
@@ -199,7 +207,8 @@ private[sql] class DiskPartition (
     */
   def closeInput() = {
     /* IMPLEMENT THIS METHOD */
-    if (measurePartitionSize() > 0) {
+    if (measurePartitionSize() > 0 && data != null && data.size() > 0) {
+      System.out.println("SPILLING ON CLOSE")
       spillPartitionToDisk()
     }
     inputClosed = true
@@ -250,13 +259,14 @@ private[sql] object DiskHashedRelation {
     var current : Row = null
     var which_partition : Int = 0
     var current_partition : DiskPartition = null
+    System.out.println("WAdding inputs now:")
+
     while (input.hasNext){
       current = input.next()
       which_partition = current.hashCode() % size
       System.out.println("Which:Part:  ")
       System.out.println(which_partition)
       current_partition = output(which_partition)
-      System.out.println("SUP")
       current_partition.insert(current)
     }
     var ret : GeneralDiskHashedRelation = new GeneralDiskHashedRelation(output)
