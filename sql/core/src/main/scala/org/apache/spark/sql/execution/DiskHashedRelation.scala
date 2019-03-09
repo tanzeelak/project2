@@ -53,11 +53,19 @@ protected [sql] final class GeneralDiskHashedRelation(partitions: Array[DiskPart
 
   override def getIterator() = {
     /* IMPLEMENT THIS METHOD */
+    System.out.println("THIS FUCKTION")
     null
   }
 
   override def closeAllPartitions() = {
     /* IMPLEMENT THIS METHOD */
+    System.out.println("THIS FUCKTION TOO")
+    val size : Int = partitions.length
+    for (i <- 0 until size){
+      partitions(i).closeInput()
+      System.out.println("Closed the input of partition: ")
+      System.out.println(i)
+    }
   }
 }
 
@@ -79,7 +87,6 @@ private[sql] class DiskPartition (
     * @param row the [[Row]] we are adding
     */
   def insert(row: Row) = {
-    System.out.println("DEBUGGING: insert")
     /* IMPLEMENT THIS METHOD */
     if(inputClosed){
       throw new SparkException("Should not be inserting, instream is closed. Bad things will happen!")
@@ -87,9 +94,7 @@ private[sql] class DiskPartition (
     }
     else {
 
-      System.out.println(row)
       if (measurePartitionSize() + row.size> blockSize) {
-        System.out.println("DEBUGGING: sspillin to disk + clear data")
         spillPartitionToDisk()
         data.clear()
       }
@@ -141,20 +146,15 @@ private[sql] class DiskPartition (
         /* IMPLEMENT THIS METHOD */
         var ret: Row = null
         if (currentIterator.hasNext){
-          System.out.println("next step")
           ret = currentIterator.next()
         }
         else{
           if(fetchNextChunk()){
-            System.out.println("recurse step")
             if (currentIterator.hasNext) {
-              System.out.println("next step")
               ret = currentIterator.next()
             }
           }
         }
-        System.out.println("what do we ret: ")
-        System.out.println(ret)
         ret
       }
 
@@ -163,10 +163,6 @@ private[sql] class DiskPartition (
         var result : Boolean = false
         if (currentIterator.hasNext || chunkSizeIterator.hasNext){
           result = true
-        }
-        else{
-          System.out.println("DEBUGGING: IT'S THE END OF THE LINE PARTNER")
-
         }
         result
       }
@@ -183,8 +179,6 @@ private[sql] class DiskPartition (
 
         if (chunkSizeIterator.hasNext){
           val chunkSize : Int = chunkSizeIterator.next()
-          System.out.println("DEBUGGING: fetchNextChunk2.1 chunksize: ")
-          System.out.println(chunkSize)
           byteArray = getNextChunkBytes(inStream, chunkSize, byteArray)
           currentIterator = getListFromBytes(byteArray).iterator().asScala
           result = true
@@ -202,7 +196,6 @@ private[sql] class DiskPartition (
     * also be closed.
     */
   def closeInput() = {
-    System.out.println("closeInput")
     /* IMPLEMENT THIS METHOD */
     if (measurePartitionSize() > 0) {
       spillPartitionToDisk()
@@ -245,6 +238,20 @@ private[sql] object DiskHashedRelation {
               size: Int = 64,
               blockSize: Int = 64000) = {
     /* IMPLEMENT THIS METHOD */
-    null
+    var output : Array[DiskPartition] = new Array[DiskPartition](size)
+    for (i <- 0 until size){
+      var filename : String = "DP"
+      filename = filename.concat(Integer.toString(i))
+      var disk_partition_i : DiskPartition = new DiskPartition(filename, blockSize)
+    }
+    var current : Row = null
+    var which_partition : Int = 0
+    while (input.hasNext){
+      current = input.next()
+      which_partition = current.hashCode() % size
+      output(which_partition).insert(current)
+    }
+    var ret : GeneralDiskHashedRelation = new GeneralDiskHashedRelation(output)
+    ret
   }
 }
