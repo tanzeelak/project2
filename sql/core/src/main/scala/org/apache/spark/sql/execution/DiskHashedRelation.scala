@@ -54,7 +54,9 @@ protected [sql] final class GeneralDiskHashedRelation(partitions: Array[DiskPart
   override def getIterator() = {
     /* IMPLEMENT THIS METHOD */
     System.out.println("THIS FUCKTION")
-    null
+    closeAllPartitions()
+    val disk_partition_iter : Iterator[DiskPartition] = partitions.iterator
+    disk_partition_iter
   }
 
   override def closeAllPartitions() = {
@@ -243,13 +245,19 @@ private[sql] object DiskHashedRelation {
       var filename : String = "DP"
       filename = filename.concat(Integer.toString(i))
       var disk_partition_i : DiskPartition = new DiskPartition(filename, blockSize)
+      output(i) = disk_partition_i
     }
     var current : Row = null
     var which_partition : Int = 0
+    var current_partition : DiskPartition = null
     while (input.hasNext){
       current = input.next()
       which_partition = current.hashCode() % size
-      output(which_partition).insert(current)
+      System.out.println("Which:Part:  ")
+      System.out.println(which_partition)
+      current_partition = output(which_partition)
+      System.out.println("SUP")
+      current_partition.insert(current)
     }
     var ret : GeneralDiskHashedRelation = new GeneralDiskHashedRelation(output)
     ret
