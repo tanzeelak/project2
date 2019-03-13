@@ -240,35 +240,17 @@ object CachingIteratorGenerator {
 
       def next() = {
         /* IMPLEMENT THIS METHOD */
-//        return a
-//        concatenation of the projection of the preUdfExpressions, the evaluation of the udf, and the projection of
-//          the postUdfExpressions
         var currRow = input.next()
-        System.out.println("C1")
-        System.out.println(currRow.length)
         var preRow = preUdfProjection(currRow)
-        System.out.println("C2")
-        System.out.println(preRow.length)
         var postRow = postUdfProjection(currRow)
-        System.out.println("C3")
-        System.out.println(postRow.length)
         if (cache.containsKey(currRow)) {
-          System.out.println("C3.1")
           currRow = currRow
         } else {
-          System.out.println("C3.2")
           val projectedCurrRow = udfProject(currRow)
-          // cache.put(currRow, projectedCurrRow)
           currRow = projectedCurrRow
         }
-        System.out.println(currRow.length)
-        System.out.println("C4")
         var pre_curr = new JoinedRow(preRow, currRow)
-        System.out.println("C5")
-        System.out.println(pre_curr.length)
         var pre_curr_post = new JoinedRow(pre_curr, postRow)
-        System.out.println("C6")
-        System.out.println(pre_curr_post.length)
         pre_curr_post
 
       }

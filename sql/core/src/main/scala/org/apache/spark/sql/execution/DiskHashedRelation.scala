@@ -259,13 +259,10 @@ private[sql] object DiskHashedRelation {
     var current : Row = null
     var which_partition : Int = 0
     var current_partition : DiskPartition = null
-    System.out.println("WAdding inputs now:")
 
     while (input.hasNext){
       current = input.next()
       which_partition = keyGenerator(current).hashCode() % size
-      System.out.println("Which:Part:  ")
-      System.out.println(which_partition)
       current_partition = output(which_partition)
       current_partition.insert(current)
     }
