@@ -263,7 +263,7 @@ private[sql] object DiskHashedRelation {
 
     while (input.hasNext){
       current = input.next()
-      which_partition = current.hashCode() % size
+      which_partition = keyGenerator(current).hashCode() % size
       System.out.println("Which:Part:  ")
       System.out.println(which_partition)
       current_partition = output(which_partition)
