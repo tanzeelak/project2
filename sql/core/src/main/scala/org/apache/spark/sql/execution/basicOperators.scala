@@ -99,7 +99,6 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
     val keyGenerator = CS143Utils.getNewProjection(projectList, child.output)
 
     /* IMPLEMENT THIS METHOD */
-    System.out.println("DEBUGGING: generateIterator")
     var diskHashedRelation = DiskHashedRelation.apply(input, keyGenerator)
     var projector = CS143Utils.generateCachingIterator(projectList, child.output)
     var partitionIter = diskHashedRelation.getIterator()
@@ -111,7 +110,6 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
         var ret = false
-        // System.out.println("DEBUGGING: hasNext")
         if (rowsInPartition == null){
           ret = fetchNextPartition()
         }
@@ -121,15 +119,11 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
         else if (fetchNextPartition()){
           ret = true
         }
-        // System.out.println("hasNext returning")
-        // System.out.println(ret)
-
         ret
       }
 
       def next() = {
         /* IMPLEMENT THIS METHOD */
-        // System.out.println("DEBUGGING: next")
         var ret: Row = null
         ret = rowsInPartition.next()
         ret
@@ -143,24 +137,15 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
         */
       private def fetchNextPartition(): Boolean  = {
         /* IMPLEMENT THIS METHOD */
-        // System.out.println("DEBUGGING: fetchNextPartition")
         var ret = false
         if (partitionIter.hasNext){
-          // System.out.println("partitionIter hasNext")
           currPartition = partitionIter.next()
-          // System.out.println("got next partition")
-
           rowsInPartition = projector(currPartition.getData())
-          // System.out.println("got new rows")
-
           if (!rowsInPartition.hasNext){
-            // System.out.println("Calling fetch again..")
             fetchNextPartition()
           }
           ret = true
         }
-        // System.out.println("fetch returning: ")
-        // System.out.println(ret)
         ret
       }
     }
