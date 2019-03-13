@@ -53,7 +53,6 @@ protected [sql] final class GeneralDiskHashedRelation(partitions: Array[DiskPart
 
   override def getIterator() = {
     /* IMPLEMENT THIS METHOD */
-    System.out.println("THIS FUCKTION")
     closeAllPartitions()
     val disk_partition_iter : Iterator[DiskPartition] = partitions.iterator
     disk_partition_iter
@@ -61,13 +60,10 @@ protected [sql] final class GeneralDiskHashedRelation(partitions: Array[DiskPart
 
   override def closeAllPartitions() = {
     /* IMPLEMENT THIS METHOD */
-    System.out.println("THIS FUCKTION TOO")
     val size : Int = partitions.length
     for (i <- 0 until size){
       partitions(i).closeInput()
     }
-    System.out.println("THIS FUCKTION TOO closed partitions")
-
   }
 }
 
@@ -128,8 +124,8 @@ private[sql] class DiskPartition (
     Files.write(path, bytes, StandardOpenOption.APPEND)
     writtenToDisk = true
   }
+/**
 
-  /**
     * If this partition has been closed, this method returns an Iterator of all the
     * data that was written to disk by this partition.
     *
@@ -165,13 +161,6 @@ private[sql] class DiskPartition (
         /* IMPLEMENT THIS METHOD */
         var result : Boolean = false
         if (currentIterator.hasNext || chunkSizeIterator.hasNext){
-          System.out.println("Current, chunk iters have next: ")
-          System.out.println(currentIterator.hasNext)
-          System.out.println(chunkSizeIterator.hasNext)
-          if (chunkSizeIterator.hasNext){
-            System.out.println(chunkSizeIterator)
-
-          }
           result = true
         }
         result
@@ -208,7 +197,6 @@ private[sql] class DiskPartition (
   def closeInput() = {
     /* IMPLEMENT THIS METHOD */
     if (measurePartitionSize() > 0 && data != null && data.size() > 0) {
-      System.out.println("SPILLING ON CLOSE")
       spillPartitionToDisk()
     }
     inputClosed = true

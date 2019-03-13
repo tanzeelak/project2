@@ -234,23 +234,23 @@ object CachingIteratorGenerator {
 
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
-
         input.hasNext
       }
 
       def next() = {
         /* IMPLEMENT THIS METHOD */
         var currRow = input.next()
+        var key = cacheKeyProjection(currRow)
         var preRow = preUdfProjection(currRow)
         var postRow = postUdfProjection(currRow)
-        if (cache.containsKey(currRow)) {
-          currRow = currRow
+        if (cache.containsKey(key)) {
+          currRow = cache.get(key)
         } else {
           val projectedCurrRow = udfProject(currRow)
+          cache.put(key, projectedCurrRow)
           currRow = projectedCurrRow
         }
-        var pre_curr = new JoinedRow(preRow, currRow)
-        var pre_curr_post = new JoinedRow(pre_curr, postRow)
+        var pre_curr_post = Row.fromSeq(preRow++currRow++postRow)
         pre_curr_post
 
       }
