@@ -134,20 +134,14 @@ case class SpillableAggregate(
       var diskHashedRelation: Option[DiskHashedRelation] = None
       var aggregateResult: Iterator[Row] = aggregate()
 
-    // 1) drain the input iterator into the aggregation table;
-    // 2) generate an aggregate iterator using the helper function AggregateIteratorGenerator properly formatting the aggregate result;
-    // 3) use the Iterator inside generateIterator as external interface to access and drive the aggregate iterator.
-
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
         aggregateResult.hasNext
-
       }
 
       def next() = {
         /* IMPLEMENT THIS METHOD */
         aggregateResult.next()
-
       }
 
       /**
@@ -157,9 +151,6 @@ case class SpillableAggregate(
         */
       private def aggregate(): Iterator[Row] = {
         /* IMPLEMENT THIS METHOD */
-        // The "data iterator" refers specifically to the "data" variable already provided in the skeleton code (it's
-        // identical to the input argument 'input'). You're basically just to load the agg hash table by using
-        // whatever rows the iterator returns.
         // Aggregate.scala if/else part
         while (data.hasNext) {
           var currentRow = data.next()
@@ -169,13 +160,8 @@ case class SpillableAggregate(
             currentBuffer = newAggregatorInstance()
             currentAggregationTable.update(currentGroup.copy(), currentBuffer)
           }
-
           currentBuffer.update(currentRow)
-
-
         }
-
-
         val attributes = new Array[Attribute](1)
         attributes(0) = aggregatorSchema
         AggregateIteratorGenerator(resultExpression, attributes++ namedGroups.map(_._2))(currentAggregationTable.iterator)
