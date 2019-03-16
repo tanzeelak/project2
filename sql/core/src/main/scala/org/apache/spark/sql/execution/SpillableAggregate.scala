@@ -53,14 +53,28 @@ case class SpillableAggregate(
                                 aggregate: AggregateExpression,
                                 resultAttribute: AttributeReference)
 
+
+  private[this] val computedAggregates = aggregateExpressions.flatMap { agg =>
+    agg.collect {
+      case a: AggregateExpression =>
+        ComputedAggregate(
+          a,
+          BindReferences.bindReference(a, child.output),
+          AttributeReference(s"aggResult:$a", a.dataType, a.nullable)())
+    }
+  }.toArray
+
   /** Physical aggregator generated from a logical expression.  */
-  private[this] val aggregator: ComputedAggregate = null //IMPLEMENT ME
+  private[this] val aggregator: ComputedAggregate = computedAggregates(0) // IMPLEMENT ME
+
 
   /** Schema of the aggregate.  */
-  private[this] val aggregatorSchema: AttributeReference = null //IMPLEMENT ME
+  private[this] val aggregatorSchema: AttributeReference = aggregator.resultAttribute // IMPLEMENT ME
 
   /** Creates a new aggregator instance.  */
-  private[this] def newAggregatorInstance(): AggregateFunction = null //IMPLEMENT ME
+  private[this] def newAggregatorInstance(): AggregateFunction = {
+    aggregator.aggregate.newInstance()
+  } // IMPLEMENT ME
 
   /** Named attributes used to substitute grouping attributes in the final result. */
   private[this] val namedGroups = groupingExpressions.map {
@@ -120,14 +134,20 @@ case class SpillableAggregate(
       var diskHashedRelation: Option[DiskHashedRelation] = None
       var aggregateResult: Iterator[Row] = aggregate()
 
+    // 1) drain the input iterator into the aggregation table;
+    // 2) generate an aggregate iterator using the helper function AggregateIteratorGenerator properly formatting the aggregate result;
+    // 3) use the Iterator inside generateIterator as external interface to access and drive the aggregate iterator.
+
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
-        false
+        aggregateResult.hasNext
+
       }
 
       def next() = {
         /* IMPLEMENT THIS METHOD */
-        null
+        aggregateResult.next()
+
       }
 
       /**
@@ -137,7 +157,28 @@ case class SpillableAggregate(
         */
       private def aggregate(): Iterator[Row] = {
         /* IMPLEMENT THIS METHOD */
-        null
+        // The "data iterator" refers specifically to the "data" variable already provided in the skeleton code (it's
+        // identical to the input argument 'input'). You're basically just to load the agg hash table by using
+        // whatever rows the iterator returns.
+        // Aggregate.scala if/else part
+        while (data.hasNext) {
+          var currentRow = data.next()
+          var currentGroup = groupingProjection(currentRow)
+          var currentBuffer = currentAggregationTable(currentGroup)
+          if (currentBuffer == null) {
+            currentBuffer = newAggregatorInstance()
+            currentAggregationTable.update(currentGroup.copy(), currentBuffer)
+          }
+
+          currentBuffer.update(currentRow)
+
+
+        }
+
+
+        val attributes = new Array[Attribute](1)
+        attributes(0) = aggregatorSchema
+        AggregateIteratorGenerator(resultExpression, attributes++ namedGroups.map(_._2))(currentAggregationTable.iterator)
       }
 
       /**
